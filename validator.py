@@ -36,6 +36,15 @@ class MDSProviderApi():
         msg = "Provider {} not in list of providers {}".format(self.name, names)
         raise ProviderNotFoundError("ProviderNotFoundError", msg)
 
+    def _compose_header(self):
+        if self.name.lower() == 'bird':
+            auth = 'Bird ' + self.token
+            header = {'Authorization': auth, 'APP-Version': '3.0.0'}
+        else:
+            auth = 'Bearer ' + self.token
+            header = {'Authorization': auth}
+        return header
+    
     def validate_trips(self): 
         """
         Validates the trips endpoint
@@ -43,10 +52,7 @@ class MDSProviderApi():
         r = requests.get(MDS_SCHEMA_PATH + "trips.json")
         schema = r.json()
         v = Draft4Validator(schema)
-        token =  "Bearer " + self.token
-
-        header = {'Authorization': token}
-        r  = requests.get(self._get_mds_url() + self.post_fix + '/trips', headers=header)
+        r  = requests.get(self._get_mds_url() + self.post_fix + '/trips', headers = self._compose_header())  
         json = r.json()
         try: 
             jsonschema.validate(json,schema)
@@ -61,10 +67,9 @@ class MDSProviderApi():
         r = requests.get(MDS_SCHEMA_PATH + "status_changes.json")
         schema = r.json()
         v = Draft4Validator(schema)
-        token =  "Bearer " + self.token
 
-        header = {'Authorization': token}
-        r  = requests.get(self._get_mds_url() + self.post_fix + '/status_changes', headers=header)
+        r  = requests.get(self._get_mds_url() + self.post_fix + '/status_changes', headers = self._compose_header())
+
         json = r.json()
         try: 
             jsonschema.validate(json,schema)
