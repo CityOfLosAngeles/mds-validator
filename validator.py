@@ -1,5 +1,6 @@
 import argparse
 import jsonschema
+from jsonschema import Draft4Validator
 import requests
 import pandas as pd
 
@@ -43,18 +44,21 @@ class MDSProviderApi():
             auth = 'Bearer ' + self.token
             header = {'Authorization': auth}
         return header
-
-    def valildate_trips(self): 
+    
+    def validate_trips(self): 
         """
         Validates the trips endpoint
         """
         r = requests.get(MDS_SCHEMA_PATH + "trips.json")
         schema = r.json()
-
-        r  = requests.get(self._get_mds_url() + self.post_fix + '/trips', headers = self._compose_header())
+        v = Draft4Validator(schema)
+        r  = requests.get(self._get_mds_url() + self.post_fix + '/trips', headers = self._compose_header())  
         json = r.json()
-        jsonschema.validate(json,schema)
-        print("Succesfully validated {} trips endpoint".format(self.name))
+        try: 
+            jsonschema.validate(json,schema)
+        except jsonschema.exceptions.ValidationError:
+           for error in sorted(v.iter_errors(json), key=str):
+               print(error)
 
     def validate_status_changes(self):
         """
@@ -62,11 +66,17 @@ class MDSProviderApi():
         """
         r = requests.get(MDS_SCHEMA_PATH + "status_changes.json")
         schema = r.json()
+        v = Draft4Validator(schema)
 
         r  = requests.get(self._get_mds_url() + self.post_fix + '/status_changes', headers = self._compose_header())
+
         json = r.json()
-        jsonschema.validate(json,schema)
-        print("Succesfully validated {} status_change  endpoint".format(self.name))
+        try: 
+            jsonschema.validate(json,schema)
+        except jsonschema.exceptions.ValidationError:
+            print("Validation error encounted for {}".format(r.url))
+            for error in sorted(v.iter_errors(json), key=str):
+                print(error)
 
 
     def __init__(self, name, token, post_fix):
@@ -84,11 +94,22 @@ if __name__ == '__main__':
                         help="Bearer Token for the provider that you are attempting to validate")
     parser.add_argument("--postfix", type=str,
                         help="if it exists, the post_fix (ie, city or version or both) from the MDS base url in providers.csv")
+    
+
+    parser.add_argument('--status-changes', dest='status_change', action='store_true')
+    parser.add_argument('--trips', dest='trips', action='store_true')
+    parser.set_defaults(status_change=False)
+    parser.set_defaults(trips=False)
     args = parser.parse_args()
     if args.postfix: 
         api = MDSProviderApi(args.provider_name,args.token, args.postfix)
     else: 
         api = MDSProviderApi(args.provider_name, args.token, '')
     print("Attempting to validate {}".format(api.name))
-    api.valildate_trips()
-    api.validate_status_changes()
+    if args.trips:
+        api.validate_trips()
+    elif args.status_change:
+        api.validate_status_changes()
+    else: 
+        api.validate_trips()
+        api.validate_status_changes()
