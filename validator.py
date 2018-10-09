@@ -58,8 +58,8 @@ class MDSProviderApi():
             jsonschema.validate(json,schema)
         except jsonschema.exceptions.ValidationError:
            for error in sorted(v.iter_errors(json), key=str):
-               print(error)
-
+                for suberror in sorted(error.context, key=lambda e: e.schema_path):
+                    print(list(suberror.schema_path), suberror.message, sep=", ")
     def validate_status_changes(self):
         """
         Validates the status_change endpoint
@@ -76,9 +76,13 @@ class MDSProviderApi():
         except jsonschema.exceptions.ValidationError:
             print("Validation error encounted for {}".format(r.url))
             for error in sorted(v.iter_errors(json), key=str):
-                print(error)
-
-
+                for suberror in sorted(error.context, key=lambda e: e.schema_path):
+                    print(list(suberror.schema_path), suberror.message, sep=", ")
+    def test_query_params(self):
+        """
+        Tests if you can pass query params to the APIs and get back data
+        """
+        pass
     def __init__(self, name, token, post_fix):
         self.name = name
         self.token = token
