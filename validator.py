@@ -25,7 +25,7 @@ class MDSProviderApi():
     """
     Class representing an MDS provider API
     """
-
+    
     def _get_mds_url(self):
         df = pd.read_csv('https://raw.githubusercontent.com/CityOfLosAngeles/mobility-data-specification/dev/providers.csv')
         providers = df.to_dict(orient='records')
@@ -47,7 +47,7 @@ class MDSProviderApi():
     
     def validate_trips(self): 
         """
-        Validates the trips endpoint
+        Validates the trips endpoint. Returns True if valid. 
         """
         r = requests.get(MDS_SCHEMA_PATH + "trips.json")
         schema = r.json()
@@ -57,9 +57,15 @@ class MDSProviderApi():
         try: 
             jsonschema.validate(json,schema)
         except jsonschema.exceptions.ValidationError:
-           for error in sorted(v.iter_errors(json), key=str):
+            print("Validation error encounted for {}".format(r.url))
+            for error in sorted(v.iter_errors(json), key=str):
+                print(error)
                 for suberror in sorted(error.context, key=lambda e: e.schema_path):
                     print(list(suberror.schema_path), suberror.message, sep=", ")
+            return False
+        print("Validated Trips for {}".format(self.name))
+        return True
+
     def validate_status_changes(self):
         """
         Validates the status_change endpoint
@@ -76,8 +82,13 @@ class MDSProviderApi():
         except jsonschema.exceptions.ValidationError:
             print("Validation error encounted for {}".format(r.url))
             for error in sorted(v.iter_errors(json), key=str):
+                print(error)
                 for suberror in sorted(error.context, key=lambda e: e.schema_path):
                     print(list(suberror.schema_path), suberror.message, sep=", ")
+            return False
+        print("Validated Status Changes for {}".format(self.name))
+        return True 
+
     def test_query_params(self):
         """
         Tests if you can pass query params to the APIs and get back data
