@@ -4,8 +4,8 @@ from jsonschema import Draft4Validator
 import requests
 import pandas as pd
 
-MDS_SCHEMA_PATH ="https://raw.githubusercontent.com/CityOfLosAngeles/mobility-data-specification/dev/provider/"
-
+MDS_SCHEMA_PATH = "https://raw.githubusercontent.com/CityOfLosAngeles/mobility-data-specification/master/provider/"
+PROVIDERS_INFO_PATH = "https://raw.githubusercontent.com/CityOfLosAngeles/mobility-data-specification/master/providers.csv"
 
 
 class Error(Exception):
@@ -27,7 +27,7 @@ class MDSProviderApi():
     """
     
     def _get_mds_url(self):
-        df = pd.read_csv('https://raw.githubusercontent.com/CityOfLosAngeles/mobility-data-specification/dev/providers.csv')
+        df = pd.read_csv(PROVIDERS_INFO_PATH)
         providers = df.to_dict(orient='records')
         for provider in providers:
             if provider['provider_name'].lower() == self.name.lower():
